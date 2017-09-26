@@ -10,6 +10,7 @@
 #include <QThread>
 #include <QPixmap>
 #include <QGraphicsScene>
+#include <QVTKWidget.h>
 
 // stl
 #include <math.h>
@@ -31,6 +32,7 @@
 #include "imgproc/c_camcalib.h"
 #include "3d_view/c_3d_viewer.h"
 #include "custom_qt/c_custom_scene.h"
+#include "algorithm/c_fitting.h"
 
 namespace Ui {
 class G_MAIN_WINDOW;
@@ -97,6 +99,16 @@ private slots:
 
     void on_pushButton_projection_inlier_2_plane_clicked();
 
+    void on_horizontalSlider_lidar_data_sliderMoved(int position);
+
+    void on_pushButton_excalib_next_clicked();
+
+    void on_pushButton_excalib_prev_clicked();
+
+    void on_pushButton_extrapolation_clicked();
+
+    void on_pushButton_fitting_triangle_clicked();
+    
 private:
     Ui::G_MAIN_WINDOW *ui;
 
@@ -161,10 +173,20 @@ private:
     pcl::ModelCoefficients::Ptr m_plane_coefficients;
     pcl::PointIndices::Ptr m_plane_inliers;
     PointCloudT::Ptr m_cloud_projection;
+    PointCloudT::Ptr m_cloud_left_side;
+    PointCloudT::Ptr m_cloud_right_side;
+    PointCloudT::Ptr m_cloud_triangle_vertice;
+
+    ulong m_point_ind = 0;
+    ulong m_point_max = 0;
+
+    C_FITTING m_fitting_obj;
+
 
 
 private:
     void disp_current_img();
+    void disp_current_point(PointCloudT::Ptr _cloud, boost::shared_ptr<pcl::visualization::PCLVisualizer> _viewer, QVTKWidget* _qvtkwidget);
 
 public slots:
     void SLOT_C_T_SCENEUPDATE_2_MAIN();

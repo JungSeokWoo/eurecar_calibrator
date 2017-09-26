@@ -30,6 +30,18 @@ G_MAIN_WINDOW::G_MAIN_WINDOW(QWidget *parent) :
     c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_projection,"cloud_proj");
     c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_proj");
 
+    m_cloud_left_side.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_left_side,"cloud_left_side");
+    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_left_side");
+
+    m_cloud_right_side.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_right_side,"cloud_right_side");
+    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_right_side");
+
+    m_cloud_triangle_vertice.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_triangle_vertice");
+
     connect(c_t_sceneupdate,SIGNAL(SIG_C_T_SCENEUPDATE_2_MAIN()),this,SLOT(SLOT_C_T_SCENEUPDATE_2_MAIN()));
 }
 
@@ -60,8 +72,6 @@ void G_MAIN_WINDOW::on_pushButton_set_imgfolder_load_clicked()
         {
             while ((ent = readdir(dir)) != NULL)
             {
-                string token;
-                vector<string> tokens;
                 dir_file = ent->d_name;
                 if((dir_file == ".") || (dir_file == ".." ))
                     continue;
@@ -676,6 +686,11 @@ void G_MAIN_WINDOW::SLOT_C_T_SCENEUPDATE_2_MAIN()
 
 void G_MAIN_WINDOW::on_pushButton_fitting_plane_model_clicked()
 {
+    m_cloud_projection.reset(new PointCloudT);
+    m_cloud_left_side.reset(new PointCloudT);
+    m_cloud_right_side.reset(new PointCloudT);
+    m_cloud_triangle_vertice.reset(new PointCloudT);
+
     m_plane_coefficients.reset(new pcl::ModelCoefficients);
     m_plane_inliers.reset(new pcl::PointIndices);
     // Create the segmentation object
@@ -731,4 +746,192 @@ void G_MAIN_WINDOW::on_pushButton_projection_inlier_2_plane_clicked()
     c_3d_viewer_lidar_filtered->viewer->updatePointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
     c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_projection,"cloud_proj");
     ui->qvtkWidget_lidar_data_filtered->update();
+
+    m_point_ind = 0;
+    m_point_max = m_cloud_projection->points.size() - 1;
+
+    ui->horizontalSlider_lidar_data->setMaximum(m_point_max);
+    ui->horizontalSlider_lidar_data->setValue(m_point_ind);
+
+    disp_current_point(m_cloud_projection,c_3d_viewer_lidar_filtered->viewer,ui->qvtkWidget_lidar_data_filtered);
+}
+
+void G_MAIN_WINDOW::disp_current_point(PointCloudT::Ptr _cloud,boost::shared_ptr<pcl::visualization::PCLVisualizer> _viewer, QVTKWidget* _qvtkwidget)
+{
+    ui->lineEdit_point_ind->setText(QString::number(m_point_ind));
+    ui->lineEdit_point_total->setText(QString::number(m_point_max));
+
+    ui->lineEdit_point_x->setText(QString::number(_cloud->points[m_point_ind].x));
+    ui->lineEdit_point_y->setText(QString::number(_cloud->points[m_point_ind].y));
+    ui->lineEdit_point_z->setText(QString::number(_cloud->points[m_point_ind].z));
+
+    for(size_t i=0;i < _cloud->points.size();i++)
+    {
+        if ( i == m_point_ind)
+        {
+            _cloud->points[i].r = 255;
+            _cloud->points[i].g = 0;
+            _cloud->points[i].b = 0;
+        }
+        else
+        {
+            _cloud->points[i].r = 0;
+            _cloud->points[i].g = 0;
+            _cloud->points[i].b = 255;
+        }
+    }
+    _viewer->updatePointCloud(_cloud,"cloud_proj");
+    _qvtkwidget->update();
+}
+
+void G_MAIN_WINDOW::on_horizontalSlider_lidar_data_sliderMoved(int position)
+{
+    m_point_ind = ui->horizontalSlider_lidar_data->value();
+
+    disp_current_point(m_cloud_projection,c_3d_viewer_lidar_filtered->viewer,ui->qvtkWidget_lidar_data_filtered);
+}
+
+void G_MAIN_WINDOW::on_pushButton_excalib_next_clicked()
+{
+    if(m_point_ind + 1 > m_point_max)
+    {
+        m_point_ind = m_point_max;
+    }
+    else
+    {
+        m_point_ind++;
+    }
+
+    ui->horizontalSlider_lidar_data->setValue(m_point_ind);
+    disp_current_point(m_cloud_projection,c_3d_viewer_lidar_filtered->viewer,ui->qvtkWidget_lidar_data_filtered);
+}
+
+void G_MAIN_WINDOW::on_pushButton_excalib_prev_clicked()
+{
+    if(m_point_ind -1 < 0)
+    {
+        m_point_ind = 0;
+    }
+    else
+    {
+        m_point_ind--;
+    }
+    ui->horizontalSlider_lidar_data->setValue(m_point_ind);
+    disp_current_point(m_cloud_projection,c_3d_viewer_lidar_filtered->viewer,ui->qvtkWidget_lidar_data_filtered);
+}
+
+void G_MAIN_WINDOW::on_pushButton_extrapolation_clicked()
+{
+    ulong extra_ind_from = ui->lineEdit_extra_ind_from->text().toLong();
+    ulong extra_ind_to = ui->lineEdit_extra_ind_to->text().toLong();
+
+    double extra_x_to = m_cloud_projection->points[extra_ind_to].x;
+    double extra_y_to = m_cloud_projection->points[extra_ind_to].y;
+    double extra_z_to = m_cloud_projection->points[extra_ind_to].z;
+
+    double extra_x_from = m_cloud_projection->points[extra_ind_from].x;
+    double extra_y_from = m_cloud_projection->points[extra_ind_from].y;
+    double extra_z_from = m_cloud_projection->points[extra_ind_from].z;
+
+    double x_direct_vec = extra_x_to - extra_x_from;
+    double y_direct_vec = extra_y_to - extra_y_from;
+    double z_direct_vec = extra_z_to - extra_z_from;
+
+    double extra_x = extra_x_to + 0.5*x_direct_vec;
+    double extra_y = extra_y_to + 0.5*y_direct_vec;
+    double extra_z = extra_z_to + 0.5*z_direct_vec;
+
+    pcl::PointXYZRGBA pt_extra;
+
+    if(ui->radioButton_extra_left->isChecked())
+    {
+        pt_extra.x = extra_x;
+        pt_extra.y = extra_y;
+        pt_extra.z = extra_z;
+        pt_extra.r = 255;
+        pt_extra.g = 255;
+        pt_extra.b = 0;
+        m_cloud_left_side->points.push_back(pt_extra);
+        c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_left_side,"cloud_left_side");
+    }
+    else
+    {
+        pt_extra.x = extra_x;
+        pt_extra.y = extra_y;
+        pt_extra.z = extra_z;
+        pt_extra.r = 0;
+        pt_extra.g = 255;
+        pt_extra.b = 0;
+        m_cloud_right_side->points.push_back(pt_extra);
+        c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_right_side,"cloud_right_side");
+    }
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+void G_MAIN_WINDOW::on_pushButton_fitting_triangle_clicked()
+{
+    // Left side Least-mean-square
+    vector<double> left_line_param;
+    cv::Point3f left_line_avg_pt;
+    vector<cv::Point3f> left_pt_list;
+    for(size_t i=0;i < m_cloud_left_side->points.size();++i)
+    {
+        cv::Point3f pt;
+        pt.x = m_cloud_left_side->points[i].x;
+        pt.y = m_cloud_left_side->points[i].y;
+        pt.z = m_cloud_left_side->points[i].z;
+        left_pt_list.push_back(pt);
+    }
+    m_fitting_obj.Get3DLineFitting(left_pt_list,&left_line_param,&left_line_avg_pt);
+
+
+    // Right side Least-mean-square
+    vector<double> right_line_param;
+    cv::Point3f right_line_avg_pt;
+    vector<cv::Point3f> right_pt_list;
+    for(size_t i=0;i < m_cloud_right_side->points.size();++i)
+    {
+        cv::Point3f pt;
+        pt.x = m_cloud_right_side->points[i].x;
+        pt.y = m_cloud_right_side->points[i].y;
+        pt.z = m_cloud_right_side->points[i].z;
+        right_pt_list.push_back(pt);
+    }
+    m_fitting_obj.Get3DLineFitting(right_pt_list,&right_line_param,&right_line_avg_pt);
+
+
+    // Draw line
+//    pcl::PointXYZRGBA pt_left_line_start;
+//    double x_left_line_start = -1000.0;
+//    double t_left_start = (x_left_line_start - left_line_avg_pt.x)/left_line_param[0];
+//    double y_left_line_start = left_line_avg_pt.y + t_left_start*left_line_param[1];
+//    double z_left_line_start = left_line_avg_pt.z - t_left_start;
+
+//    pt_left_line_start.x = x_left_line_start;
+//    pt_left_line_start.y = y_left_line_start;
+//    pt_left_line_start.z = z_left_line_start;
+
+//    pcl::PointXYZRGBA pt_left_line_end;
+//    double x_left_line_end = 1000.0;
+//    double t_left_end = (x_left_line_end - left_line_avg_pt.x)/left_line_param[0];
+//    double y_left_line_end = left_line_avg_pt.y + t_left_end*left_line_param[1];
+//    double z_left_line_end = left_line_avg_pt.z - t_left_end;
+
+//    pt_left_line_end.x = x_left_line_end;
+//    pt_left_line_end.y = y_left_line_end;
+//    pt_left_line_end.z = z_left_line_end;
+
+    pcl::ModelCoefficients::Ptr left_line_model_coefficients;
+    left_line_model_coefficients.reset(new pcl::ModelCoefficients);
+    left_line_model_coefficients->values.resize(6);
+    left_line_model_coefficients->values[0] = left_line_avg_pt.x;
+    left_line_model_coefficients->values[1] = left_line_avg_pt.y;
+    left_line_model_coefficients->values[2] = left_line_avg_pt.z;
+
+    left_line_model_coefficients->values[3] = left_line_param[0];
+    left_line_model_coefficients->values[4] = left_line_param[1];
+    left_line_model_coefficients->values[5] = -1;
+
+    c_3d_viewer_lidar_filtered->viewer->addLine(*left_line_model_coefficients);
+
 }

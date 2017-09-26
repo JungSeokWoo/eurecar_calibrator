@@ -31,7 +31,7 @@ SOURCES += \
     3d_view/c_3d_viewer.cpp \
     custom_qt/c_custom_scene.cpp \
     thread/c_sceneupdate.cpp \
-    algorithm/c_ransac.cpp
+    algorithm/c_fitting.cpp
 
 HEADERS += \
         g_main_window.h \
@@ -40,7 +40,7 @@ HEADERS += \
     3d_view/c_3d_viewer.h \
     custom_qt/c_custom_scene.h \
     thread/c_sceneupdate.h \
-    algorithm/c_ransac.h
+    algorithm/c_fitting.h
 
 FORMS += \
         g_main_window.ui

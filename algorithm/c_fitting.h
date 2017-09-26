@@ -41,11 +41,11 @@
 
 using namespace std;
 
-class C_RANASC
+class C_FITTING
 {
 public:
-    C_RANASC() {}
-    ~C_RANASC() {}
+    C_FITTING() {}
+    ~C_FITTING() {}
 
     void GetEstPlane(unsigned int _num_of_iteration, // input
                      double _inlier_condition, // input
@@ -53,6 +53,18 @@ public:
                      vector<cv::Point3f> *_inlier_points, // output
                      vector<cv::Point3f> *_projected_points, // output
                      vector<double> *_plane_param); // output
+
+    void Get3DLineFitting(vector<cv::Point3f> _input_points, // input,
+                          vector<double> *_line_param,
+                          cv::Point3f *_avg_pt); // output
+
+    void KahanSum(float value, float & sum, float & correction)
+    {
+        float term = value - correction;
+        float temp = sum + term;
+        correction = (temp - sum) - term;
+        sum = temp;
+    }
 
 private:
 };
