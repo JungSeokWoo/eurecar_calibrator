@@ -30,7 +30,8 @@ SOURCES += \
     imgproc/util_funcs.cpp \
     3d_view/c_3d_viewer.cpp \
     custom_qt/c_custom_scene.cpp \
-    thread/c_sceneupdate.cpp
+    thread/c_sceneupdate.cpp \
+    algorithm/c_ransac.cpp
 
 HEADERS += \
         g_main_window.h \
@@ -38,7 +39,8 @@ HEADERS += \
     imgproc/util_funcs.hpp \
     3d_view/c_3d_viewer.h \
     custom_qt/c_custom_scene.h \
-    thread/c_sceneupdate.h
+    thread/c_sceneupdate.h \
+    algorithm/c_ransac.h
 
 FORMS += \
         g_main_window.ui
@@ -138,5 +140,12 @@ LIBS += -L/usr/local/lib \
     -lpcl_sample_consensus \
     -lgomp
 # -------------------------------------------------
+
+# armadillo ----------------------------------------
+INCLUDEPATH += /usr/include
+
+LIBS += -L/usr/lib/x86_64-linux-gnu \
+    -larmadillo
+# --------------------------------------------------
 
 

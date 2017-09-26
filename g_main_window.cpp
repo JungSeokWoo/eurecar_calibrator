@@ -26,6 +26,10 @@ G_MAIN_WINDOW::G_MAIN_WINDOW(QWidget *parent) :
     c_3d_viewer_lidar_filtered->viewer->addPointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
     c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"cloud");
 
+    m_cloud_projection.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_projection,"cloud_proj");
+    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_proj");
+
     connect(c_t_sceneupdate,SIGNAL(SIG_C_T_SCENEUPDATE_2_MAIN()),this,SLOT(SLOT_C_T_SCENEUPDATE_2_MAIN()));
 }
 
@@ -669,3 +673,62 @@ void G_MAIN_WINDOW::SLOT_C_T_SCENEUPDATE_2_MAIN()
 }
 
 // ------------------------------------------------------------------------
+
+void G_MAIN_WINDOW::on_pushButton_fitting_plane_model_clicked()
+{
+    m_plane_coefficients.reset(new pcl::ModelCoefficients);
+    m_plane_inliers.reset(new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<pcl::PointXYZRGBA> seg;
+    // Optional
+    seg.setOptimizeCoefficients (true);
+    // Mandatory
+    seg.setModelType (pcl::SACMODEL_PLANE);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setDistanceThreshold (0.02);
+
+    seg.setInputCloud (c_3d_viewer_lidar_filtered->cloud);
+    seg.segment (*m_plane_inliers, *m_plane_coefficients);
+
+    c_3d_viewer_lidar_filtered->viewer->addPlane(*m_plane_coefficients,"plane");
+
+    cout << m_plane_coefficients->values[0] << endl;
+    cout << m_plane_coefficients->values[1] << endl;
+    cout << m_plane_coefficients->values[2] << endl;
+}
+
+void G_MAIN_WINDOW::on_pushButton_projection_inlier_2_plane_clicked()
+{
+    double A = m_plane_coefficients->values[0];
+    double B = m_plane_coefficients->values[1];
+    double C = m_plane_coefficients->values[2];
+    double D = m_plane_coefficients->values[3];
+
+    m_cloud_projection.reset(new PointCloudT);
+    for(size_t i=0; i < m_plane_inliers->indices.size();++i)
+    {
+        double pt_x = c_3d_viewer_lidar_filtered->cloud->points[m_plane_inliers->indices[i]].x;
+        double pt_y = c_3d_viewer_lidar_filtered->cloud->points[m_plane_inliers->indices[i]].y;
+        double pt_z = c_3d_viewer_lidar_filtered->cloud->points[m_plane_inliers->indices[i]].z;
+
+        double t = (-D - A*pt_x - B*pt_y - C*pt_z)/(A*A + B*B + C*C);
+
+        double pt_proj_x = pt_x + t*A;
+        double pt_proj_y = pt_y + t*B;
+        double pt_proj_z = pt_z + t*C;
+
+        pcl::PointXYZRGBA pt_proj;
+        pt_proj.x = pt_proj_x;
+        pt_proj.y = pt_proj_y;
+        pt_proj.z = pt_proj_z;
+        pt_proj.r = 0;
+        pt_proj.g = 0;
+        pt_proj.b = 255;
+        m_cloud_projection->points.push_back(pt_proj);
+    }
+
+    c_3d_viewer_lidar_filtered->cloud.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_projection,"cloud_proj");
+    ui->qvtkWidget_lidar_data_filtered->update();
+}

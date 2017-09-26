@@ -93,6 +93,10 @@ private slots:
 
     void on_pushButton_extract_roi_clicked();
 
+    void on_pushButton_fitting_plane_model_clicked();
+
+    void on_pushButton_projection_inlier_2_plane_clicked();
+
 private:
     Ui::G_MAIN_WINDOW *ui;
 
@@ -153,6 +157,10 @@ private:
     double m_excalib_resize_frame_ratio;
     double m_excalib_resize_ratio;
     double m_excalib_resize_ratio_total;
+
+    pcl::ModelCoefficients::Ptr m_plane_coefficients;
+    pcl::PointIndices::Ptr m_plane_inliers;
+    PointCloudT::Ptr m_cloud_projection;
 
 
 private:
