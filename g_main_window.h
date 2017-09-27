@@ -109,6 +109,8 @@ private slots:
 
     void on_pushButton_fitting_triangle_clicked();
     
+    void on_pushButton_save_calibration_sample_clicked();
+
 private:
     Ui::G_MAIN_WINDOW *ui;
 
@@ -172,6 +174,13 @@ private:
 
     pcl::ModelCoefficients::Ptr m_plane_coefficients;
     pcl::PointIndices::Ptr m_plane_inliers;
+
+    pcl::ModelCoefficients::Ptr m_left_line_coefficients;
+    pcl::PointIndices::Ptr m_left_line_inliers;
+
+    pcl::ModelCoefficients::Ptr m_right_line_coefficients;
+    pcl::PointIndices::Ptr m_right_line_inliers;
+
     PointCloudT::Ptr m_cloud_projection;
     PointCloudT::Ptr m_cloud_left_side;
     PointCloudT::Ptr m_cloud_right_side;
@@ -181,12 +190,15 @@ private:
     ulong m_point_max = 0;
 
     C_FITTING m_fitting_obj;
+    C_VEC_CAL m_vec_cal_obj;
 
 
 
 private:
     void disp_current_img();
     void disp_current_point(PointCloudT::Ptr _cloud, boost::shared_ptr<pcl::visualization::PCLVisualizer> _viewer, QVTKWidget* _qvtkwidget);
+
+    void ResetFilteredCloud();
 
 public slots:
     void SLOT_C_T_SCENEUPDATE_2_MAIN();

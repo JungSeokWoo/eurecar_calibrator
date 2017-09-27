@@ -40,7 +40,7 @@ G_MAIN_WINDOW::G_MAIN_WINDOW(QWidget *parent) :
 
     m_cloud_triangle_vertice.reset(new PointCloudT);
     c_3d_viewer_lidar_filtered->viewer->addPointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
-    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,5,"cloud_triangle_vertice");
+    c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,7,"cloud_triangle_vertice");
 
     connect(c_t_sceneupdate,SIGNAL(SIG_C_T_SCENEUPDATE_2_MAIN()),this,SLOT(SLOT_C_T_SCENEUPDATE_2_MAIN()));
 }
@@ -593,6 +593,8 @@ void G_MAIN_WINDOW::on_pushButton_z_size_smaller_clicked()
 
 void G_MAIN_WINDOW::on_pushButton_extract_roi_clicked()
 {
+    ResetFilteredCloud();
+
     c_3d_viewer_lidar_filtered->cloud.reset(new PointCloudT);
 
     for(unsigned int ind = 0; ind < c_3d_viewer_lidar_load->cloud->points.size();ind++)
@@ -686,11 +688,8 @@ void G_MAIN_WINDOW::SLOT_C_T_SCENEUPDATE_2_MAIN()
 
 void G_MAIN_WINDOW::on_pushButton_fitting_plane_model_clicked()
 {
-    m_cloud_projection.reset(new PointCloudT);
-    m_cloud_left_side.reset(new PointCloudT);
-    m_cloud_right_side.reset(new PointCloudT);
-    m_cloud_triangle_vertice.reset(new PointCloudT);
-
+    ResetFilteredCloud();
+    c_3d_viewer_lidar_filtered->viewer->removeAllShapes();
     m_plane_coefficients.reset(new pcl::ModelCoefficients);
     m_plane_inliers.reset(new pcl::PointIndices);
     // Create the segmentation object
@@ -706,14 +705,12 @@ void G_MAIN_WINDOW::on_pushButton_fitting_plane_model_clicked()
     seg.segment (*m_plane_inliers, *m_plane_coefficients);
 
     c_3d_viewer_lidar_filtered->viewer->addPlane(*m_plane_coefficients,"plane");
-
-    cout << m_plane_coefficients->values[0] << endl;
-    cout << m_plane_coefficients->values[1] << endl;
-    cout << m_plane_coefficients->values[2] << endl;
 }
 
 void G_MAIN_WINDOW::on_pushButton_projection_inlier_2_plane_clicked()
 {
+    c_3d_viewer_lidar_filtered->viewer->removeAllShapes();
+
     double A = m_plane_coefficients->values[0];
     double B = m_plane_coefficients->values[1];
     double C = m_plane_coefficients->values[2];
@@ -870,68 +867,225 @@ void G_MAIN_WINDOW::on_pushButton_extrapolation_clicked()
 
 void G_MAIN_WINDOW::on_pushButton_fitting_triangle_clicked()
 {
-    // Left side Least-mean-square
-    vector<double> left_line_param;
-    cv::Point3f left_line_avg_pt;
-    vector<cv::Point3f> left_pt_list;
-    for(size_t i=0;i < m_cloud_left_side->points.size();++i)
+    m_left_line_coefficients.reset(new pcl::ModelCoefficients);
+    m_left_line_inliers.reset(new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<pcl::PointXYZRGBA> seg_left;
+    // Optional
+    seg_left.setOptimizeCoefficients (true);
+    // Mandatory
+    seg_left.setModelType (pcl::SACMODEL_LINE);
+    seg_left.setMethodType (pcl::SAC_RANSAC);
+    seg_left.setDistanceThreshold (0.02);
+
+    seg_left.setInputCloud (m_cloud_left_side);
+    seg_left.segment (*m_left_line_inliers, *m_left_line_coefficients);
+
+    m_right_line_coefficients.reset(new pcl::ModelCoefficients);
+    m_right_line_inliers.reset(new pcl::PointIndices);
+    // Create the segmentation object
+    pcl::SACSegmentation<pcl::PointXYZRGBA> seg_right;
+    // Optional
+    seg_right.setOptimizeCoefficients (true);
+    // Mandatory
+    seg_right.setModelType (pcl::SACMODEL_LINE);
+    seg_right.setMethodType (pcl::SAC_RANSAC);
+    seg_right.setDistanceThreshold (0.02);
+
+    seg_right.setInputCloud (m_cloud_right_side);
+    seg_right.segment (*m_right_line_inliers, *m_right_line_coefficients);
+
+    const std::string id_l = "left_line";
+    const std::string id_r = "right_line";
+    c_3d_viewer_lidar_filtered->viewer->addLine(*m_left_line_coefficients,id_l);
+    c_3d_viewer_lidar_filtered->viewer->addLine(*m_right_line_coefficients,id_r);
+
+    cv::Point3f vec_lp;
+    vec_lp.x = m_left_line_coefficients->values[0];
+    vec_lp.y = m_left_line_coefficients->values[1];
+    vec_lp.z = m_left_line_coefficients->values[2];
+
+    cv::Point3f vec_rp;
+    vec_rp.x = m_right_line_coefficients->values[0];
+    vec_rp.y = m_right_line_coefficients->values[1];
+    vec_rp.z = m_right_line_coefficients->values[2];
+
+    cv::Point3f vec_e;
+    vec_e.x = m_left_line_coefficients->values[3];
+    vec_e.y = m_left_line_coefficients->values[4];
+    vec_e.z = m_left_line_coefficients->values[5];
+
+    cv::Point3f vec_f;
+    vec_f.x = m_right_line_coefficients->values[3];
+    vec_f.y = m_right_line_coefficients->values[4];
+    vec_f.z = m_right_line_coefficients->values[5];
+
+    cv::Point3f vec_lr;
+    vec_lr.x = vec_rp.x - vec_lp.x;
+    vec_lr.y = vec_rp.y - vec_lp.y;
+    vec_lr.z = vec_rp.z - vec_lp.z;
+
+    cv::Point3f vec_f_cross_g;
+    m_vec_cal_obj.CrossProd3D(vec_f,vec_lr,vec_f_cross_g);
+
+    cv::Point3f vec_f_cross_e;
+    m_vec_cal_obj.CrossProd3D(vec_f,vec_e,vec_f_cross_e);
+
+    cv::Point3f vec_intersection;
+
+    cv::Point3f vec_f_cross_lr;
+    float norm_f_cross_lr = 0;
+    float norm_f_cross_e = 0;
+    float e_scale_factor;
+
+    m_vec_cal_obj.CrossProd3D(vec_f,vec_lr,vec_f_cross_lr);
+    norm_f_cross_lr = m_vec_cal_obj.Norm3D(vec_f_cross_lr);
+    norm_f_cross_e = m_vec_cal_obj.Norm3D(vec_f_cross_e);
+
+    e_scale_factor = norm_f_cross_lr/norm_f_cross_e;
+
+    cv::Point3f vec_e_scale;
+    vec_e_scale.x = e_scale_factor*vec_e.x;
+    vec_e_scale.y = e_scale_factor*vec_e.y;
+    vec_e_scale.z = e_scale_factor*vec_e.z;
+
+    if(vec_f_cross_g.x * vec_f_cross_e.x > 0) // same direction
     {
-        cv::Point3f pt;
-        pt.x = m_cloud_left_side->points[i].x;
-        pt.y = m_cloud_left_side->points[i].y;
-        pt.z = m_cloud_left_side->points[i].z;
-        left_pt_list.push_back(pt);
+        vec_intersection = m_vec_cal_obj.Sum3D(vec_lp,vec_e_scale);
     }
-    m_fitting_obj.Get3DLineFitting(left_pt_list,&left_line_param,&left_line_avg_pt);
-
-
-    // Right side Least-mean-square
-    vector<double> right_line_param;
-    cv::Point3f right_line_avg_pt;
-    vector<cv::Point3f> right_pt_list;
-    for(size_t i=0;i < m_cloud_right_side->points.size();++i)
+    else
     {
-        cv::Point3f pt;
-        pt.x = m_cloud_right_side->points[i].x;
-        pt.y = m_cloud_right_side->points[i].y;
-        pt.z = m_cloud_right_side->points[i].z;
-        right_pt_list.push_back(pt);
+        vec_intersection = m_vec_cal_obj.Sum3D(vec_lp,-vec_e_scale);
     }
-    m_fitting_obj.Get3DLineFitting(right_pt_list,&right_line_param,&right_line_avg_pt);
 
+    pcl::PointXYZRGBA pt_intersection_lr;
+    pt_intersection_lr.x = vec_intersection.x;
+    pt_intersection_lr.y = vec_intersection.y;
+    pt_intersection_lr.z = vec_intersection.z;
+    pt_intersection_lr.r = 200;
+    pt_intersection_lr.g = 100;
+    pt_intersection_lr.b = 50;
 
-    // Draw line
-//    pcl::PointXYZRGBA pt_left_line_start;
-//    double x_left_line_start = -1000.0;
-//    double t_left_start = (x_left_line_start - left_line_avg_pt.x)/left_line_param[0];
-//    double y_left_line_start = left_line_avg_pt.y + t_left_start*left_line_param[1];
-//    double z_left_line_start = left_line_avg_pt.z - t_left_start;
+    m_cloud_triangle_vertice->points.push_back(pt_intersection_lr);
 
-//    pt_left_line_start.x = x_left_line_start;
-//    pt_left_line_start.y = y_left_line_start;
-//    pt_left_line_start.z = z_left_line_start;
+    cv::Point3f pt_left_bottom;
+    cv::Point3f pt_right_bottom;
 
-//    pcl::PointXYZRGBA pt_left_line_end;
-//    double x_left_line_end = 1000.0;
-//    double t_left_end = (x_left_line_end - left_line_avg_pt.x)/left_line_param[0];
-//    double y_left_line_end = left_line_avg_pt.y + t_left_end*left_line_param[1];
-//    double z_left_line_end = left_line_avg_pt.z - t_left_end;
+    float left_side_length = ui->lineEdit_caliboard_l->text().toFloat();
+    float right_side_length = ui->lineEdit_caliboard_r->text().toFloat();
+    float bottom_side_length = ui->lineEdit_caliboard_b->text().toFloat();
 
-//    pt_left_line_end.x = x_left_line_end;
-//    pt_left_line_end.y = y_left_line_end;
-//    pt_left_line_end.z = z_left_line_end;
+    pt_left_bottom.x = pt_intersection_lr.x + left_side_length*(-vec_e.x);
+    pt_left_bottom.y = pt_intersection_lr.y + left_side_length*(-vec_e.y);
+    pt_left_bottom.z = pt_intersection_lr.z + left_side_length*(-vec_e.z);
 
-    pcl::ModelCoefficients::Ptr left_line_model_coefficients;
-    left_line_model_coefficients.reset(new pcl::ModelCoefficients);
-    left_line_model_coefficients->values.resize(6);
-    left_line_model_coefficients->values[0] = left_line_avg_pt.x;
-    left_line_model_coefficients->values[1] = left_line_avg_pt.y;
-    left_line_model_coefficients->values[2] = left_line_avg_pt.z;
+    float between_ang = m_vec_cal_obj.CalBetweenAngle(left_side_length,right_side_length,bottom_side_length);
 
-    left_line_model_coefficients->values[3] = left_line_param[0];
-    left_line_model_coefficients->values[4] = left_line_param[1];
-    left_line_model_coefficients->values[5] = -1;
+    cv::Point3f inv_vec_e;
+    inv_vec_e.x = -vec_e.x;
+    inv_vec_e.y = -vec_e.y;
+    inv_vec_e.z = -vec_e.z;
 
-    c_3d_viewer_lidar_filtered->viewer->addLine(*left_line_model_coefficients);
+    cv::Point3f plane_norm;
+    plane_norm.x = m_plane_coefficients->values[0];
+    plane_norm.y = m_plane_coefficients->values[1];
+    plane_norm.z = m_plane_coefficients->values[2];
 
+    cv::Point3f top_to_right_dir_vec;
+
+//    top_to_right_dir_vec = m_vec_cal_obj.ObtainOtherSideTri(inv_vec_e,between_ang,plane_norm);
+
+    top_to_right_dir_vec = m_vec_cal_obj.RotateByArbitraryAxis(inv_vec_e,between_ang,plane_norm);
+
+    // Check
+
+    pt_right_bottom.x = pt_intersection_lr.x + right_side_length*(top_to_right_dir_vec.x);
+    pt_right_bottom.y = pt_intersection_lr.y + right_side_length*(top_to_right_dir_vec.y);
+    pt_right_bottom.z = pt_intersection_lr.z + right_side_length*(top_to_right_dir_vec.z);
+
+//    pt_right_bottom.x = pt_intersection_lr.x + right_side_length*(-vec_f.x);
+//    pt_right_bottom.y = pt_intersection_lr.y + right_side_length*(-vec_f.y);
+//    pt_right_bottom.z = pt_intersection_lr.z + right_side_length*(-vec_f.z);
+
+    pcl::PointXYZRGBA pt_left_bottom_pcl;
+    pt_left_bottom_pcl.x = pt_left_bottom.x;
+    pt_left_bottom_pcl.y = pt_left_bottom.y;
+    pt_left_bottom_pcl.z = pt_left_bottom.z;
+    pt_left_bottom_pcl.r = 200;
+    pt_left_bottom_pcl.g = 100;
+    pt_left_bottom_pcl.b = 50;
+
+    pcl::PointXYZRGBA pt_right_bottom_pcl;
+    pt_right_bottom_pcl.x = pt_right_bottom.x;
+    pt_right_bottom_pcl.y = pt_right_bottom.y;
+    pt_right_bottom_pcl.z = pt_right_bottom.z;
+    pt_right_bottom_pcl.r = 200;
+    pt_right_bottom_pcl.g = 100;
+    pt_right_bottom_pcl.b = 50;
+
+    m_cloud_triangle_vertice->points.push_back(pt_left_bottom_pcl);
+    m_cloud_triangle_vertice->points.push_back(pt_right_bottom_pcl);
+
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+void G_MAIN_WINDOW::ResetFilteredCloud()
+{
+    m_cloud_projection.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_projection,"cloud_proj");
+
+    m_cloud_left_side.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_left_side,"cloud_left_side");
+
+    m_cloud_right_side.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_right_side,"cloud_right_side");
+
+    m_cloud_triangle_vertice.reset(new PointCloudT);
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+void G_MAIN_WINDOW::on_pushButton_save_calibration_sample_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getSaveFileName(this,"Set Save file name") ;
+    string save_calibration_sample_path = directory.toStdString();
+
+    cv::Point3f lidar_pt_1;
+    lidar_pt_1.x = m_cloud_triangle_vertice->points[0].x;
+    lidar_pt_1.y = m_cloud_triangle_vertice->points[0].y;
+    lidar_pt_1.z = m_cloud_triangle_vertice->points[0].z;
+
+    cv::Point3f lidar_pt_2;
+    lidar_pt_2.x = m_cloud_triangle_vertice->points[1].x;
+    lidar_pt_2.y = m_cloud_triangle_vertice->points[1].y;
+    lidar_pt_2.z = m_cloud_triangle_vertice->points[1].z;
+
+    cv::Point3f lidar_pt_3;
+    lidar_pt_3.x = m_cloud_triangle_vertice->points[2].x;
+    lidar_pt_3.y = m_cloud_triangle_vertice->points[2].y;
+    lidar_pt_3.z = m_cloud_triangle_vertice->points[2].z;
+
+    cv::Point2f img_pt_1;
+    img_pt_1.x = ui->lineEdit_img_x_pt_1->text().toFloat();
+    img_pt_1.y = ui->lineEdit_img_y_pt_1->text().toFloat();
+
+    cv::Point2f img_pt_2;
+    img_pt_2.x = ui->lineEdit_img_x_pt_2->text().toFloat();
+    img_pt_2.y = ui->lineEdit_img_y_pt_2->text().toFloat();
+
+    cv::Point2f img_pt_3;
+    img_pt_3.x = ui->lineEdit_img_x_pt_3->text().toFloat();
+    img_pt_3.y = ui->lineEdit_img_y_pt_3->text().toFloat();
+
+    FileStorage fs(save_calibration_sample_path,FileStorage::WRITE);
+    fs << "lidar_pt_1" << lidar_pt_1;
+    fs << "lidar_pt_2" << lidar_pt_2;
+    fs << "lidar_pt_3" << lidar_pt_3;
+    fs << "img_pt_1" << img_pt_1;
+    fs << "img_pt_2" << img_pt_2;
+    fs << "img_pt_3" << img_pt_3;
+    fs.release();
 }

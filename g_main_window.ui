@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1532</width>
-    <height>806</height>
+    <height>820</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <x>10</x>
       <y>10</y>
       <width>1521</width>
-      <height>751</height>
+      <height>761</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -811,7 +811,7 @@
         <x>750</x>
         <y>593</y>
         <width>161</width>
-        <height>111</height>
+        <height>131</height>
        </rect>
       </property>
       <property name="title">
@@ -879,7 +879,7 @@
        <property name="geometry">
         <rect>
          <x>4</x>
-         <y>80</y>
+         <y>100</y>
          <width>151</width>
          <height>25</height>
         </rect>
@@ -888,11 +888,40 @@
         <string>Fitting</string>
        </property>
       </widget>
+      <widget class="QLabel" name="label_15">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>75</y>
+         <width>91</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Right side</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_caliboard_b">
+       <property name="geometry">
+        <rect>
+         <x>105</x>
+         <y>73</y>
+         <width>51</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>0.905</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="geometry">
        <rect>
-        <x>1070</x>
+        <x>1340</x>
         <y>592</y>
         <width>171</width>
         <height>101</height>
@@ -1004,10 +1033,10 @@
      <widget class="QGroupBox" name="groupBox_7">
       <property name="geometry">
        <rect>
-        <x>920</x>
+        <x>1190</x>
         <y>592</y>
         <width>141</width>
-        <height>81</height>
+        <height>75</height>
        </rect>
       </property>
       <property name="title">
@@ -1368,6 +1397,97 @@
        </property>
        <property name="text">
         <string>Right</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="pushButton_save_calibration_sample">
+      <property name="geometry">
+       <rect>
+        <x>1190</x>
+        <y>673</y>
+        <width>141</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save sample</string>
+      </property>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_5">
+      <property name="geometry">
+       <rect>
+        <x>920</x>
+        <y>592</y>
+        <width>101</width>
+        <height>111</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Triangle Move</string>
+      </property>
+      <widget class="QLabel" name="label_27">
+       <property name="geometry">
+        <rect>
+         <x>1</x>
+         <y>27</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>u : </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_28">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>55</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>v : </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_triangle_move_u">
+       <property name="geometry">
+        <rect>
+         <x>33</x>
+         <y>25</y>
+         <width>51</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_triangle_move_u_2">
+       <property name="geometry">
+        <rect>
+         <x>33</x>
+         <y>52</y>
+         <width>51</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_move_triangle">
+       <property name="geometry">
+        <rect>
+         <x>5</x>
+         <y>80</y>
+         <width>91</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Move</string>
        </property>
       </widget>
      </widget>

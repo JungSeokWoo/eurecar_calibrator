@@ -66,7 +66,29 @@ public:
         sum = temp;
     }
 
+
+
 private:
+};
+
+class C_VEC_CAL
+{
+public:
+    C_VEC_CAL() {}
+    ~C_VEC_CAL() {}
+
+    void CrossProd3D(cv::Point3f _ele_1_vec, cv::Point3f _ele_2_vec, cv::Point3f& _output);
+
+    float Norm3D(cv::Point3f _input_vec);
+
+    cv::Point3f Sum3D(cv::Point3f _ele_1_vec,cv::Point3f _ele_2_vec);
+
+    float CalBetweenAngle(float _left_length, float _right_length, float _bottom_length);
+
+    cv::Point3f ObtainOtherSideTri(cv::Point3f _e, float _theta, cv::Point3f _norm_plane);
+
+    cv::Point3f RotateByArbitraryAxis(cv::Point3f _e, float _theta, cv::Point3f _norm_plane);
+
 };
 
 #endif // C_RANSAC_H
