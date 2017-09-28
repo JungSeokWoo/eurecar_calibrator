@@ -98,6 +98,15 @@ void C_FITTING::Get3DLineFitting(vector<cv::Point3f> _input_points,
 //    _line_param->push_back(X(2,0));
 }
 
+float C_VEC_CAL::InnerProd3D(cv::Point3f _ele_1_vec, cv::Point3f _ele_2_vec)
+{
+    float return_val;
+
+    return_val = _ele_1_vec.x*_ele_2_vec.x + _ele_1_vec.y*_ele_2_vec.y + _ele_1_vec.z*_ele_2_vec.z;
+
+    return return_val;
+}
+
 void C_VEC_CAL::CrossProd3D(cv::Point3f _ele_1_vec, cv::Point3f _ele_2_vec, cv::Point3f &_output)
 {
     float x1 = _ele_1_vec.x;

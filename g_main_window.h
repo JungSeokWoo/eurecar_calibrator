@@ -111,6 +111,20 @@ private slots:
     
     void on_pushButton_save_calibration_sample_clicked();
 
+    void on_checkBox_show_filtered_pts_clicked();
+
+    void on_pushButton_move_triangle_clicked();
+
+    void on_pushButton_rotate_triangle_clicked();
+
+    void on_pushButton_load_calibration_samples_clicked();
+
+    void on_pushButton_save_calibration_result_clicked();
+
+    void on_pushButton_load_calibration_result_clicked();
+
+    void on_pushButton_display_result_clicked();
+
 private:
     Ui::G_MAIN_WINDOW *ui;
 
@@ -192,6 +206,22 @@ private:
     C_FITTING m_fitting_obj;
     C_VEC_CAL m_vec_cal_obj;
 
+    cv::Point3f m_u_vec;
+    cv::Point3f m_v_vec;
+
+    // plane norm vector
+    cv::Point3f m_plane_norm;
+
+
+    // Calibratino result matrix
+    cv::Mat1f  m_transform_mat;
+
+    // Display calibration result
+    cv::Mat disp_calib_result_img;
+    QImage disp_calib_result_img_q;
+    QPixmap disp_calib_result_img_p;
+    QGraphicsScene* disp_calib_result_img_scene = new QGraphicsScene;
+
 
 
 private:
@@ -199,6 +229,8 @@ private:
     void disp_current_point(PointCloudT::Ptr _cloud, boost::shared_ptr<pcl::visualization::PCLVisualizer> _viewer, QVTKWidget* _qvtkwidget);
 
     void ResetFilteredCloud();
+    void MoveTriangle();
+    void RotateTraingle();
 
 public slots:
     void SLOT_C_T_SCENEUPDATE_2_MAIN();

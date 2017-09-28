@@ -77,6 +77,8 @@ public:
     C_VEC_CAL() {}
     ~C_VEC_CAL() {}
 
+    float InnerProd3D(cv::Point3f _ele_1_vec, cv::Point3f _ele_2_vec);
+
     void CrossProd3D(cv::Point3f _ele_1_vec, cv::Point3f _ele_2_vec, cv::Point3f& _output);
 
     float Norm3D(cv::Point3f _input_vec);

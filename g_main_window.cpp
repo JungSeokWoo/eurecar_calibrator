@@ -739,8 +739,9 @@ void G_MAIN_WINDOW::on_pushButton_projection_inlier_2_plane_clicked()
         m_cloud_projection->points.push_back(pt_proj);
     }
 
-    c_3d_viewer_lidar_filtered->cloud.reset(new PointCloudT);
-    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
+    c_3d_viewer_lidar_filtered->viewer->removePointCloud("cloud");
+//    c_3d_viewer_lidar_filtered->cloud.reset(new PointCloudT);
+//    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
     c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_projection,"cloud_proj");
     ui->qvtkWidget_lidar_data_filtered->update();
 
@@ -958,6 +959,20 @@ void G_MAIN_WINDOW::on_pushButton_fitting_triangle_clicked()
         vec_intersection = m_vec_cal_obj.Sum3D(vec_lp,-vec_e_scale);
     }
 
+    cv::Point3f vec_intersection_to_lp;
+    vec_intersection_to_lp.x = vec_lp.x - vec_intersection.x;
+    vec_intersection_to_lp.y = vec_lp.y - vec_intersection.y;
+    vec_intersection_to_lp.z = vec_lp.z - vec_intersection.z;
+
+    if(vec_intersection_to_lp.x * vec_e.x > 0)
+    {
+        vec_e.x = -vec_e.x;
+        vec_e.y = -vec_e.y;
+        vec_e.z = -vec_e.z;
+    }
+
+
+
     pcl::PointXYZRGBA pt_intersection_lr;
     pt_intersection_lr.x = vec_intersection.x;
     pt_intersection_lr.y = vec_intersection.y;
@@ -991,21 +1006,48 @@ void G_MAIN_WINDOW::on_pushButton_fitting_triangle_clicked()
     plane_norm.y = m_plane_coefficients->values[1];
     plane_norm.z = m_plane_coefficients->values[2];
 
+    m_plane_norm.x = plane_norm.x;
+    m_plane_norm.y = plane_norm.y;
+    m_plane_norm.z = plane_norm.z;
+
     cv::Point3f top_to_right_dir_vec;
 
 //    top_to_right_dir_vec = m_vec_cal_obj.ObtainOtherSideTri(inv_vec_e,between_ang,plane_norm);
 
     top_to_right_dir_vec = m_vec_cal_obj.RotateByArbitraryAxis(inv_vec_e,between_ang,plane_norm);
 
-    // Check
-
     pt_right_bottom.x = pt_intersection_lr.x + right_side_length*(top_to_right_dir_vec.x);
     pt_right_bottom.y = pt_intersection_lr.y + right_side_length*(top_to_right_dir_vec.y);
     pt_right_bottom.z = pt_intersection_lr.z + right_side_length*(top_to_right_dir_vec.z);
 
-//    pt_right_bottom.x = pt_intersection_lr.x + right_side_length*(-vec_f.x);
-//    pt_right_bottom.y = pt_intersection_lr.y + right_side_length*(-vec_f.y);
-//    pt_right_bottom.z = pt_intersection_lr.z + right_side_length*(-vec_f.z);
+    // Find u and v vector
+
+    cv::Point3f vec_i;
+    vec_i.x = 1.0;
+    vec_i.y = 0;
+    vec_i.z = 0;
+
+    cv::Point3f vec_i_minus_a;
+    vec_i_minus_a.x = vec_i.x - plane_norm.x;
+    vec_i_minus_a.y = vec_i.y - plane_norm.y;
+    vec_i_minus_a.z = vec_i.z - plane_norm.z;
+
+    float i_minus_a_inner_prod_a;
+    i_minus_a_inner_prod_a = m_vec_cal_obj.InnerProd3D(vec_i_minus_a,plane_norm);
+
+    float direction_scalar = -1/i_minus_a_inner_prod_a;
+
+    cv::Point3f vec_u_wo_normalize;
+    vec_u_wo_normalize.x = plane_norm.x + direction_scalar*(vec_i.x - plane_norm.x);
+    vec_u_wo_normalize.y = plane_norm.y + direction_scalar*(vec_i.y - plane_norm.y);
+    vec_u_wo_normalize.z = plane_norm.z + direction_scalar*(vec_i.z - plane_norm.z);
+
+    float vec_u_wo_normalize_length = sqrt(vec_u_wo_normalize.x*vec_u_wo_normalize.x + vec_u_wo_normalize.y*vec_u_wo_normalize.y + vec_u_wo_normalize.z*vec_u_wo_normalize.z);
+    m_u_vec.x = vec_u_wo_normalize.x/vec_u_wo_normalize_length;
+    m_u_vec.y = vec_u_wo_normalize.y/vec_u_wo_normalize_length;
+    m_u_vec.z = vec_u_wo_normalize.z/vec_u_wo_normalize_length;
+
+    m_v_vec = m_vec_cal_obj.RotateByArbitraryAxis(m_u_vec,(3.1415926535)/2.0,plane_norm);
 
     pcl::PointXYZRGBA pt_left_bottom_pcl;
     pt_left_bottom_pcl.x = pt_left_bottom.x;
@@ -1026,7 +1068,14 @@ void G_MAIN_WINDOW::on_pushButton_fitting_triangle_clicked()
     m_cloud_triangle_vertice->points.push_back(pt_left_bottom_pcl);
     m_cloud_triangle_vertice->points.push_back(pt_right_bottom_pcl);
 
+    cout << "top : (" << m_cloud_triangle_vertice->points[0].x << ", " << m_cloud_triangle_vertice->points[0].y << ", " << m_cloud_triangle_vertice->points[0].z << ")" << endl;
+    cout << "bottom left : (" << m_cloud_triangle_vertice->points[1].x << ", " << m_cloud_triangle_vertice->points[1].y << ", " << m_cloud_triangle_vertice->points[1].z << ")" << endl;
+    cout << "bottom right : (" << m_cloud_triangle_vertice->points[2].x << ", " << m_cloud_triangle_vertice->points[2].y << ", " << m_cloud_triangle_vertice->points[2].z << ")" << endl;
+
     c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+    c_3d_viewer_lidar_filtered->viewer->addPolygon<pcl::PointXYZRGBA>(m_cloud_triangle_vertice,1.0,0.0,0.0,"triangle",0);
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE,"triangle");
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 0.5, "triangle");
     ui->qvtkWidget_lidar_data_filtered->update();
 }
 
@@ -1088,4 +1137,321 @@ void G_MAIN_WINDOW::on_pushButton_save_calibration_sample_clicked()
     fs << "img_pt_2" << img_pt_2;
     fs << "img_pt_3" << img_pt_3;
     fs.release();
+}
+
+void G_MAIN_WINDOW::on_checkBox_show_filtered_pts_clicked()
+{
+    if(ui->checkBox_show_filtered_pts->isChecked())
+    {
+        c_3d_viewer_lidar_filtered->viewer->addPointCloud(c_3d_viewer_lidar_filtered->cloud,"cloud");
+        c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"cloud");
+    }
+    else
+    {
+        c_3d_viewer_lidar_filtered->viewer->removePointCloud("cloud");
+    }
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+void G_MAIN_WINDOW::MoveTriangle()
+{
+    float _u = ui->lineEdit_triangle_move_u->text().toFloat();
+    float _v = ui->lineEdit_triangle_move_v->text().toFloat();
+
+    for(size_t i=0;i < m_cloud_triangle_vertice->points.size();i++)
+    {
+        m_cloud_triangle_vertice->points[i].x = m_cloud_triangle_vertice->points[i].x + _u*m_u_vec.x + _v*m_v_vec.x;
+        m_cloud_triangle_vertice->points[i].y = m_cloud_triangle_vertice->points[i].y + _u*m_u_vec.y + _v*m_v_vec.y;
+        m_cloud_triangle_vertice->points[i].z = m_cloud_triangle_vertice->points[i].z + _u*m_u_vec.z + _v*m_v_vec.z;
+    }
+
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+    c_3d_viewer_lidar_filtered->viewer->removeShape("triangle");
+    c_3d_viewer_lidar_filtered->viewer->addPolygon<pcl::PointXYZRGBA>(m_cloud_triangle_vertice,1.0,0.0,0.0,"triangle",0);
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE,"triangle");
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 0.5, "triangle");
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+
+void G_MAIN_WINDOW::RotateTraingle()
+{
+    cv::Point3f redistrb_bottom_right_pt;
+    cv::Point3f redistrb_top_pt;
+
+    redistrb_bottom_right_pt.x = m_cloud_triangle_vertice->points[2].x - m_cloud_triangle_vertice->points[1].x;
+    redistrb_bottom_right_pt.y = m_cloud_triangle_vertice->points[2].y - m_cloud_triangle_vertice->points[1].y;
+    redistrb_bottom_right_pt.z = m_cloud_triangle_vertice->points[2].z - m_cloud_triangle_vertice->points[1].z;
+
+    redistrb_top_pt.x =m_cloud_triangle_vertice->points[0].x - m_cloud_triangle_vertice->points[1].x;
+    redistrb_top_pt.y =m_cloud_triangle_vertice->points[0].y - m_cloud_triangle_vertice->points[1].y;
+    redistrb_top_pt.z =m_cloud_triangle_vertice->points[0].z - m_cloud_triangle_vertice->points[1].z;
+
+    cv::Point3f rotate_redistrb_bottom_right_pt;
+    cv::Point3f rotate_redistrb_top_pt;
+
+    float angle = ui->lineEdit_triangle_rotate_angle->text().toFloat();
+
+    rotate_redistrb_bottom_right_pt = m_vec_cal_obj.RotateByArbitraryAxis(redistrb_bottom_right_pt,angle,m_plane_norm);
+    rotate_redistrb_top_pt = m_vec_cal_obj.RotateByArbitraryAxis(redistrb_top_pt,angle,m_plane_norm);
+
+    cv::Point3f new_bottom_right_pt;
+    cv::Point3f new_top_pt;
+
+    new_bottom_right_pt.x = rotate_redistrb_bottom_right_pt.x + m_cloud_triangle_vertice->points[1].x;
+    new_bottom_right_pt.y = rotate_redistrb_bottom_right_pt.y + m_cloud_triangle_vertice->points[1].y;
+    new_bottom_right_pt.z = rotate_redistrb_bottom_right_pt.z + m_cloud_triangle_vertice->points[1].z;
+
+    new_top_pt.x = rotate_redistrb_top_pt.x + m_cloud_triangle_vertice->points[1].x;
+    new_top_pt.y = rotate_redistrb_top_pt.y + m_cloud_triangle_vertice->points[1].y;
+    new_top_pt.z = rotate_redistrb_top_pt.z + m_cloud_triangle_vertice->points[1].z;
+
+    m_cloud_triangle_vertice->points[2].x = new_bottom_right_pt.x;
+    m_cloud_triangle_vertice->points[2].y = new_bottom_right_pt.y;
+    m_cloud_triangle_vertice->points[2].z = new_bottom_right_pt.z;
+
+    m_cloud_triangle_vertice->points[0].x = new_top_pt.x;
+    m_cloud_triangle_vertice->points[0].y = new_top_pt.y;
+    m_cloud_triangle_vertice->points[0].z = new_top_pt.z;
+
+    c_3d_viewer_lidar_filtered->viewer->updatePointCloud(m_cloud_triangle_vertice,"cloud_triangle_vertice");
+    c_3d_viewer_lidar_filtered->viewer->removeShape("triangle");
+    c_3d_viewer_lidar_filtered->viewer->addPolygon<pcl::PointXYZRGBA>(m_cloud_triangle_vertice,1.0,0.0,0.0,"triangle",0);
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION,pcl::visualization::PCL_VISUALIZER_REPRESENTATION_SURFACE,"triangle");
+    c_3d_viewer_lidar_filtered->viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 0.5, "triangle");
+    ui->qvtkWidget_lidar_data_filtered->update();
+}
+
+void G_MAIN_WINDOW::on_pushButton_move_triangle_clicked()
+{
+    MoveTriangle();
+}
+
+void G_MAIN_WINDOW::on_pushButton_rotate_triangle_clicked()
+{
+    RotateTraingle();
+}
+
+void G_MAIN_WINDOW::on_pushButton_load_calibration_samples_clicked()
+{
+    QStringList directory_list;
+    directory_list = QFileDialog::getOpenFileNames(this,"Select calibration samples");
+
+    vector<cv::Point3f> lidar_point_list;
+    vector<cv::Point2f> img_point_list;
+
+    for(size_t i = 0; i < directory_list.size();i++)
+    {
+        QString file_path;
+        file_path = directory_list[i];
+
+        string file_path_str = file_path.toStdString();
+
+        cv::Point3f lidar_pt_1;
+        cv::Point3f lidar_pt_2;
+        cv::Point3f lidar_pt_3;
+        cv::Point2f img_pt_1;
+        cv::Point2f img_pt_2;
+        cv::Point2f img_pt_3;
+        cv::FileStorage fs(file_path_str,cv::FileStorage::READ);
+        fs["lidar_pt_1"] >> lidar_pt_1;
+        fs["lidar_pt_2"] >> lidar_pt_2;
+        fs["lidar_pt_3"] >> lidar_pt_3;
+        fs["img_pt_1"] >> img_pt_1;
+        fs["img_pt_2"] >> img_pt_2;
+        fs["img_pt_3"] >> img_pt_3;
+        fs.release();
+
+        lidar_point_list.push_back(lidar_pt_1);
+        lidar_point_list.push_back(lidar_pt_2);
+        lidar_point_list.push_back(lidar_pt_3);
+        img_point_list.push_back(img_pt_1);
+        img_point_list.push_back(img_pt_2);
+        img_point_list.push_back(img_pt_3);
+    }
+
+//    arma::mat A(2lidar_point_list.size(),12);
+//    arma::mat B(2*lidar_point_list.size(),1);
+
+    arma::mat A(lidar_point_list.size(),12);
+    arma::mat B(lidar_point_list.size(),1);
+
+    arma::mat M(12,1);
+    B.zeros();
+    for(size_t i = 0;i < lidar_point_list.size();i++)
+    {
+//        A(2*i,0) = lidar_point_list[i].x;
+//        A(2*i,1) = lidar_point_list[i].y;
+//        A(2*i,2) = lidar_point_list[i].z;
+//        A(2*i,3) = 1;
+//        A(2*i,4) = 0;
+//        A(2*i,5) = 0;
+//        A(2*i,6) = 0;
+//        A(2*i,7) = 0;
+//        A(2*i,8) = -img_point_list[i].x*lidar_point_list[i].x;
+//        A(2*i,9) = -img_point_list[i].x*lidar_point_list[i].y;
+//        A(2*i,10) = -img_point_list[i].x*lidar_point_list[i].z;
+//        A(2*i,11) = -img_point_list[i].x;
+
+//        A(2*i+1,0) = 0;
+//        A(2*i+1,1) = 0;
+//        A(2*i+1,2) = 0;
+//        A(2*i+1,3) = 0;
+//        A(2*i+1,4) = lidar_point_list[i].x;
+//        A(2*i+1,5) = lidar_point_list[i].y;
+//        A(2*i+1,6) = lidar_point_list[i].z;
+//        A(2*i+1,7) = 1;
+//        A(2*i+1,8) = -img_point_list[i].y*lidar_point_list[i].x;
+//        A(2*i+1,9) = -img_point_list[i].y*lidar_point_list[i].y;
+//        A(2*i+1,10) = -img_point_list[i].y*lidar_point_list[i].z;
+//        A(2*i+1,11) = -img_point_list[i].y;
+
+        A(i,0) = lidar_point_list[i].x;
+        A(i,1) = lidar_point_list[i].y;
+        A(i,2) = lidar_point_list[i].z;
+        A(i,3) = 1;
+        A(i,4) = 0;
+        A(i,5) = 0;
+        A(i,6) = 0;
+        A(i,7) = 0;
+        A(i,8) = -img_point_list[i].x*lidar_point_list[i].x;
+        A(i,9) = -img_point_list[i].x*lidar_point_list[i].y;
+        A(i,10) = -img_point_list[i].x*lidar_point_list[i].z;
+        A(i,11) = -img_point_list[i].x;
+    }
+
+    arma::mat U;
+    arma::vec s;
+    arma::mat V;
+
+    arma::svd(U,s,V,A);
+
+    m_transform_mat = cv::Mat2f::zeros(3,4);
+
+    for(size_t i = 0; i < 12 ;i++)
+    {
+        M(i,0) = V(i,V.n_cols-1);
+
+        int num_of_row = i/4;
+        int num_of_cols = i%4;
+
+        m_transform_mat(num_of_row,num_of_cols) = M(i,0);
+
+//        cout << M(i,0) << endl;
+    }
+
+    arma::mat M_check(3,4);
+
+    for(int i = 0; i < 3;i++)
+    {
+        for(int j = 0; j < 4;j++)
+        {
+            M_check(i,j) = m_transform_mat(i,j);
+        }
+    }
+
+    arma::mat check_mat(12,1);
+
+    check_mat = A*M;
+    for (int i =0;i<12;i++)
+    {
+        cout << check_mat(i,0) << endl;
+    }
+
+    for(size_t i = 0;i < lidar_point_list.size();i++)
+    {
+        arma::mat LIDAR(4,1);
+        arma::mat IMG(3,1);
+
+        LIDAR(0,0) = lidar_point_list[i].x;
+        LIDAR(1,0) = lidar_point_list[i].y;
+        LIDAR(2,0) = lidar_point_list[i].z;
+        LIDAR(3,0) = 1;
+
+        IMG = M_check*LIDAR;
+
+        float mul_x = IMG(0,0);
+        float mul_y = IMG(1,0);
+
+        cout << "ratio x : " << (float)img_point_list[i].x /mul_x << " , ratio y : " << (float)img_point_list[i].y /mul_y << endl;
+    }
+
+    cout << "calculation finished!" << endl;
+}
+
+void G_MAIN_WINDOW::on_pushButton_save_calibration_result_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getSaveFileName(this,"Set Save file name") ;
+    string save_calibration_result_path = directory.toStdString();
+
+    FileStorage fs(save_calibration_result_path,FileStorage::WRITE);
+    fs << "transform_mat" << m_transform_mat;
+    fs.release();
+}
+
+void G_MAIN_WINDOW::on_pushButton_load_calibration_result_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getOpenFileName(this,"Select Calibration result");
+
+    string calibration_result_path = directory.toStdString();
+
+    cv::FileStorage fs(calibration_result_path,cv::FileStorage::READ);
+    fs["transform_mat"] >> m_transform_mat;
+
+}
+
+void G_MAIN_WINDOW::on_pushButton_display_result_clicked()
+{
+    uint img_cols = ui->lineEdit_camera_frame_width->text().toInt();
+    uint img_rows = ui->lineEdit_camera_frame_height->text().toInt();
+
+    cv::Size size_load_to_real;
+    size_load_to_real.width = img_cols;
+    size_load_to_real.height = img_rows;
+
+    cv::Mat real_img;
+    cv::resize(excalib_ori_img,real_img,size_load_to_real);
+
+    arma::mat M(3,4);
+
+    for(int i = 0; i < 3;i++)
+    {
+        for(int j = 0; j < 4;j++)
+        {
+            M(i,j) = m_transform_mat(i,j);
+        }
+    }
+
+    for(size_t i=0;i < c_3d_viewer_lidar_load->cloud->points.size();i++)
+    {
+        arma::mat LIDAR(4,1);
+
+        LIDAR(0,0) = c_3d_viewer_lidar_load->cloud->points[i].x;
+        LIDAR(1,0) = c_3d_viewer_lidar_load->cloud->points[i].y;
+        LIDAR(2,0) = c_3d_viewer_lidar_load->cloud->points[i].z;
+        LIDAR(3,0) = 1;
+
+        arma::mat IMG(3,1);
+
+        IMG = M*LIDAR;
+
+        if((IMG(0,0) >= 0) && (IMG(0,0) < real_img.cols) && (IMG(1,0) >= 0) && (IMG(1,0) < real_img.rows))
+        {
+//            cout << "x : " << IMG(0,0) << ", y : " << IMG(1,0) << endl;
+
+            cv::circle(real_img,cv::Point(IMG(0,0),IMG(1,0)),2,cv::Scalar(0,0,255),2);
+        }
+    }
+
+    cv::resize(real_img,disp_calib_result_img,cv::Size(960,604));
+
+    disp_calib_result_img_q = Mat2QImage(disp_calib_result_img);
+    disp_calib_result_img_p.convertFromImage(disp_calib_result_img_q);
+    disp_calib_result_img_scene->clear();
+    disp_calib_result_img_scene->addPixmap(disp_calib_result_img_p);
+
+    ui->graphicsView_disp_calib_result->setScene(disp_calib_result_img_scene);
+    ui->graphicsView_disp_calib_result->show();
 }
