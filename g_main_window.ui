@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1532</width>
-    <height>820</height>
+    <height>905</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,11 +20,11 @@
       <x>10</x>
       <y>10</y>
       <width>1521</width>
-      <height>761</height>
+      <height>851</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -117,7 +117,7 @@
      <widget class="QPushButton" name="pushButton">
       <property name="geometry">
        <rect>
-        <x>320</x>
+        <x>300</x>
         <y>625</y>
         <width>151</width>
         <height>25</height>
@@ -125,19 +125,6 @@
       </property>
       <property name="text">
        <string>Intrinsic Calibration</string>
-      </property>
-     </widget>
-     <widget class="QCheckBox" name="checkBox">
-      <property name="geometry">
-       <rect>
-        <x>481</x>
-        <y>625</y>
-        <width>71</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Remap</string>
       </property>
      </widget>
      <widget class="QGraphicsView" name="graphicsView_img_load">
@@ -225,7 +212,7 @@
        <item>
         <widget class="QPushButton" name="pushButton_set_imgfolder_load">
          <property name="text">
-          <string>Load Img</string>
+          <string>Load Imgs</string>
          </property>
         </widget>
        </item>
@@ -256,12 +243,575 @@
        </item>
       </layout>
      </widget>
+     <widget class="QPushButton" name="pushButton_remap">
+      <property name="geometry">
+       <rect>
+        <x>461</x>
+        <y>625</y>
+        <width>89</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Remap</string>
+      </property>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_9">
+      <property name="geometry">
+       <rect>
+        <x>660</x>
+        <y>500</y>
+        <width>421</width>
+        <height>171</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Load calibration xml and single img</string>
+      </property>
+      <widget class="QPushButton" name="pushButton_load_single_img">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>141</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Load single image</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_load_cam_model_file">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>40</y>
+         <width>141</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Load cam model file</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_save_remap_img">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>70</y>
+         <width>141</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Save remap image</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="pushButton_cal_corr">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>740</y>
+        <width>231</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Calculate correction</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ori_x">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>710</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ori_y">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>710</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_corr_y">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>770</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_corr_x">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>770</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_4">
+     <attribute name="title">
+      <string>Inverse Perspective Transformation</string>
+     </attribute>
+     <widget class="QPushButton" name="pushButton_load_ipm_src">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>121</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Load ipm src</string>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_ipm_src">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>640</width>
+        <height>480</height>
+       </rect>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_ipm_target">
+      <property name="geometry">
+       <rect>
+        <x>660</x>
+        <y>40</y>
+        <width>841</width>
+        <height>771</height>
+       </rect>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_19">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>530</y>
+        <width>201</width>
+        <height>151</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Image Coord</string>
+      </property>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_1_y">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>30</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_32">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>93</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 3</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_29">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>33</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 1</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_2_x">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>60</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_30">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>63</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 2</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_33">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>123</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 4</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_3_y">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>90</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_2_y">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>60</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_3_x">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>90</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_4_x">
+       <property name="geometry">
+        <rect>
+         <x>51</x>
+         <y>120</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_1_x">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>30</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_4_y">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>120</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_20">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>530</y>
+        <width>201</width>
+        <height>151</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Real Coord</string>
+      </property>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_1_y_r">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>30</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_71">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>93</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 3</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_72">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>33</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 1</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_2_x_r">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>60</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_73">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>63</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 2</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_74">
+       <property name="geometry">
+        <rect>
+         <x>8</x>
+         <y>123</y>
+         <width>31</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Pt 4</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_3_y_r">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>90</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_2_y_r">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>60</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_3_x_r">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>90</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_4_x_r">
+       <property name="geometry">
+        <rect>
+         <x>51</x>
+         <y>120</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_1_x_r">
+       <property name="geometry">
+        <rect>
+         <x>50</x>
+         <y>30</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_ipm_pt_4_y_r">
+       <property name="geometry">
+        <rect>
+         <x>125</x>
+         <y>120</y>
+         <width>71</width>
+         <height>25</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="pushButton_cal_ipm">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>550</y>
+        <width>191</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>IPM Calculation</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_save_ipm_param">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>590</y>
+        <width>191</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save IPM param</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_save_ipm_img">
+      <property name="geometry">
+       <rect>
+        <x>460</x>
+        <y>630</y>
+        <width>191</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save IPM image</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_load_ipm_param">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>690</y>
+        <width>151</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Load ipm param</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_convert_to_ipm_pixel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>750</y>
+        <width>231</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Convert</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ori_y_ipm">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>720</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ori_x_ipm">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>720</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ipm_y">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>780</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_ipm_x">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>780</y>
+        <width>113</width>
+        <height>25</height>
+       </rect>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
       <string>LIDAR-RGB SensorFusion 1</string>
      </attribute>
-     <widget class="QVTKWidget" name="qvtkWidget_lidar_data_load">
+     <widget class="QVTKWidget" name="qvtkWidget_lidar_data_load" native="true">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -271,7 +821,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QVTKWidget" name="qvtkWidget_lidar_data_filtered">
+     <widget class="QVTKWidget" name="qvtkWidget_lidar_data_filtered" native="true">
       <property name="geometry">
        <rect>
         <x>621</x>

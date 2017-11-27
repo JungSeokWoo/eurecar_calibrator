@@ -40,6 +40,7 @@ public:
     int AddChessboardPoints(const vector<string> _filelist, cv::Size _board_size);
     void AddPoints(const std::vector<cv::Point2f>& _image_corners, const std::vector<cv::Point3f>& _object_corners);
     double Calibrate(cv::Size &_image_size);
+    void initUndistortSet(cv::Size _remap_size);
     cv::Mat ReMap(const cv::Mat& _image);
 };
 

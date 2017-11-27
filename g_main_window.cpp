@@ -12,6 +12,8 @@ G_MAIN_WINDOW::G_MAIN_WINDOW(QWidget *parent) :
 
     excalib_disp_img_scene = new C_CUSTOM_SCENE(c_t_sceneupdate);
 
+    ipm_src_img_scene = new C_CUSTOM_SCENE_IPM(c_t_sceneupdate_ipm);
+
     ui->qvtkWidget_lidar_data_load->SetRenderWindow(c_3d_viewer_lidar_load->viewer->getRenderWindow());
     c_3d_viewer_lidar_load->viewer->setupInteractor(ui->qvtkWidget_lidar_data_load->GetInteractor(),ui->qvtkWidget_lidar_data_load->GetRenderWindow());
     c_3d_viewer_lidar_load->viewer->setBackgroundColor(0,0,0);
@@ -43,6 +45,7 @@ G_MAIN_WINDOW::G_MAIN_WINDOW(QWidget *parent) :
     c_3d_viewer_lidar_filtered->viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,7,"cloud_triangle_vertice");
 
     connect(c_t_sceneupdate,SIGNAL(SIG_C_T_SCENEUPDATE_2_MAIN()),this,SLOT(SLOT_C_T_SCENEUPDATE_2_MAIN()));
+    connect(c_t_sceneupdate_ipm,SIGNAL(SIG_C_T_SCENEUPDATE_2_MAIN_IPM()),this,SLOT(SLOT_C_T_SCENEUPDATE_2_MAIN_IPM()));
 }
 
 G_MAIN_WINDOW::~G_MAIN_WINDOW()
@@ -154,7 +157,8 @@ void G_MAIN_WINDOW::on_pushButton_prev_clicked()
 void G_MAIN_WINDOW::on_pushButton_clicked()
 {
     m_calib_obj.AddChessboardPoints(m_imgfile_path_load_list,cv::Size(ui->lineEdit_board_width->text().toInt(),ui->lineEdit_board_height->text().toInt()));
-
+    cv::Size img_size = ori_img.size();
+    m_calib_obj.Calibrate(img_size);
     string intrinsic_calib_xml_file_path = m_intrinsic_xml_path_save + "/CAM_PARAM.xml";
 
     FileStorage fs(intrinsic_calib_xml_file_path,FileStorage::WRITE);
@@ -681,6 +685,84 @@ void G_MAIN_WINDOW::SLOT_C_T_SCENEUPDATE_2_MAIN()
 
     ui->graphicsView_excalib_img_load->setScene(excalib_disp_img_scene);
     ui->graphicsView_excalib_img_load->show();
+    mtx_sceneupdate.unlock();
+}
+
+void G_MAIN_WINDOW::SLOT_C_T_SCENEUPDATE_2_MAIN_IPM()
+{
+    mtx_sceneupdate.lock();
+
+    cv::Mat ipm_src_cp;
+    ipm_src_img.copyTo(ipm_src_cp);
+
+    if(ipm_src_img_scene->pt_list.size() == 0)
+    {
+        ui->lineEdit_ipm_pt_1_x->setText("");
+        ui->lineEdit_ipm_pt_1_y->setText("");
+        ui->lineEdit_ipm_pt_2_x->setText("");
+        ui->lineEdit_ipm_pt_2_y->setText("");
+        ui->lineEdit_ipm_pt_3_x->setText("");
+        ui->lineEdit_ipm_pt_3_y->setText("");
+        ui->lineEdit_ipm_pt_4_x->setText("");
+        ui->lineEdit_ipm_pt_4_y->setText("");
+    }
+
+    for(uint pt_ind =0; pt_ind < ipm_src_img_scene->pt_list.size(); pt_ind++)
+    {
+        double img_x = (double)ipm_src_img_scene->pt_list[pt_ind].x/ipm_disp_about_src_ratio;
+        double img_y = (double)ipm_src_img_scene->pt_list[pt_ind].y/ipm_disp_about_src_ratio;
+
+        cv::Point circle_center;
+        circle_center.x = (int)img_x;
+        circle_center.y = (int)img_y;
+        cv::circle(ipm_src_cp,circle_center,4,cv::Scalar(0,0,255),2);
+
+
+        if(pt_ind >= 1)
+        {
+            cv::line(ipm_src_cp,cv::Point(ipm_src_img_scene->pt_list.at(pt_ind-1).x/ipm_disp_about_src_ratio,ipm_src_img_scene->pt_list.at(pt_ind-1).y/ipm_disp_about_src_ratio),cv::Point(ipm_src_img_scene->pt_list.at(pt_ind).x/ipm_disp_about_src_ratio,ipm_src_img_scene->pt_list.at(pt_ind).y/ipm_disp_about_src_ratio),cv::Scalar(0,0,255),2);
+        }
+        if(pt_ind == 3)
+        {
+            cv::line(ipm_src_cp,cv::Point(ipm_src_img_scene->pt_list.at(pt_ind).x/ipm_disp_about_src_ratio,ipm_src_img_scene->pt_list.at(pt_ind).y/ipm_disp_about_src_ratio),cv::Point(ipm_src_img_scene->pt_list.at(0).x/ipm_disp_about_src_ratio,ipm_src_img_scene->pt_list.at(0).y/ipm_disp_about_src_ratio),cv::Scalar(0,0,255),2);
+        }
+
+        switch(pt_ind)
+        {
+        case 0:
+            ui->lineEdit_ipm_pt_1_x->setText(QString::number(img_x));
+            ui->lineEdit_ipm_pt_1_y->setText(QString::number(img_y));
+            break;
+        case 1:
+            ui->lineEdit_ipm_pt_2_x->setText(QString::number(img_x));
+            ui->lineEdit_ipm_pt_2_y->setText(QString::number(img_y));
+            break;
+        case 2:
+            ui->lineEdit_ipm_pt_3_x->setText(QString::number(img_x));
+            ui->lineEdit_ipm_pt_3_y->setText(QString::number(img_y));
+            break;
+        case 3:
+            ui->lineEdit_ipm_pt_4_x->setText(QString::number(img_x));
+            ui->lineEdit_ipm_pt_4_y->setText(QString::number(img_y));
+            break;
+        }
+
+    }
+
+    cv::Size resize_const;
+    resize_const.width = ui->graphicsView_ipm_src->geometry().width();
+    resize_const.height = ui->graphicsView_ipm_src->geometry().height();
+
+    ipm_src_img_disp = ResizeByConst(ipm_src_cp,resize_const);
+
+    ipm_src_img_q = Mat2QImage(ipm_src_img_disp);
+    ipm_src_img_p.convertFromImage(ipm_src_img_q);
+    ipm_src_img_scene->clear();
+    ipm_src_img_scene->addPixmap(ipm_src_img_p);
+
+    ui->graphicsView_ipm_src->setScene(ipm_src_img_scene);
+    ui->graphicsView_ipm_src->show();
+
     mtx_sceneupdate.unlock();
 }
 
@@ -1454,4 +1536,261 @@ void G_MAIN_WINDOW::on_pushButton_display_result_clicked()
 
     ui->graphicsView_disp_calib_result->setScene(disp_calib_result_img_scene);
     ui->graphicsView_disp_calib_result->show();
+}
+
+void G_MAIN_WINDOW::on_pushButton_remap_clicked()
+{
+    cv::Size distort_size;
+
+    distort_size.width = (double)ori_img.cols;
+    distort_size.height = (double)ori_img.rows;
+
+    m_calib_obj.initUndistortSet(distort_size);
+    remap_img = m_calib_obj.ReMap(ori_img);
+
+    cv::Mat remap_img_resize;
+
+    cv::Size resize_size;
+
+    resize_size.width = ui->graphicsView_img_remap->geometry().width();
+    resize_size.height = ui->graphicsView_img_remap->geometry().height();
+
+    remap_img_resize = ResizeByConst(remap_img,resize_size);
+
+    remap_img_resize.copyTo(remap_disp_img);
+    remap_disp_img_q = Mat2QImage(remap_disp_img);
+    remap_disp_img_p.convertFromImage(remap_disp_img_q);
+    remap_disp_img_scene->clear();
+    remap_disp_img_scene->addPixmap(remap_disp_img_p);
+
+    ui->graphicsView_img_remap->setScene(remap_disp_img_scene);
+    ui->graphicsView_img_remap->show();
+
+}
+
+void G_MAIN_WINDOW::on_pushButton_load_ipm_src_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getOpenFileName(this,"Select ipm src");
+
+    string ipm_src_path = directory.toStdString();
+
+    cv::Mat ipm_src_load_img = cv::imread(ipm_src_path);
+
+    if(ipm_src_load_img.empty())
+        return;
+    else
+    {
+        ipm_src_load_img.copyTo(ipm_src_img);
+    }
+
+    cv::Size resize_const;
+    resize_const.width = ui->graphicsView_ipm_src->geometry().width();
+    resize_const.height = ui->graphicsView_ipm_src->geometry().height();
+
+    ipm_src_img_disp = ResizeByConst(ipm_src_img,resize_const, &ipm_disp_about_src_ratio);
+
+    ipm_src_img_q = Mat2QImage(ipm_src_img_disp);
+    ipm_src_img_p.convertFromImage(ipm_src_img_q);
+    ipm_src_img_scene->clear();
+    ipm_src_img_scene->addPixmap(ipm_src_img_p);
+
+    ui->graphicsView_ipm_src->setScene(ipm_src_img_scene);
+    ui->graphicsView_ipm_src->show();
+}
+
+void G_MAIN_WINDOW::on_pushButton_load_single_img_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getOpenFileName(this,"Select single img src");
+
+    string single_img_src_path = directory.toStdString();
+
+    ori_img = cv::imread(single_img_src_path);
+
+    cv::Size ori_img_disp_const;
+
+    ori_img_disp_const.width = ui->graphicsView_img_load->geometry().width();
+    ori_img_disp_const.height = ui->graphicsView_img_load->geometry().height();
+
+    disp_img = ResizeByConst(ori_img,ori_img_disp_const);
+    disp_img_q = Mat2QImage(disp_img);
+    disp_img_p.convertFromImage(disp_img_q);
+    disp_img_scene->clear();
+    disp_img_scene->addPixmap(disp_img_p);
+
+    ui->graphicsView_img_load->setScene(disp_img_scene);
+    ui->graphicsView_img_load->show();
+}
+
+
+
+void G_MAIN_WINDOW::on_pushButton_load_cam_model_file_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getOpenFileName(this,"Select camera model");
+
+    string camera_model_path = directory.toStdString();
+
+    cv::FileStorage fs(camera_model_path, cv::FileStorage::READ);
+    fs["m_camera_matrix"] >> m_calib_obj.m_camera_matrix;
+    fs["m_dist_coeffs"] >> m_calib_obj.m_dist_coeffs;
+    fs.release();
+}
+
+void G_MAIN_WINDOW::on_pushButton_save_remap_img_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getSaveFileName(this,"Set Save file name") ;
+
+    string save_remap_img_path = directory.toStdString();
+
+    cv::imwrite(save_remap_img_path,remap_img);
+}
+
+void G_MAIN_WINDOW::on_pushButton_cal_ipm_clicked()
+{
+    cv::Mat ipm_lambda(2,4,CV_32FC1);
+    cv::Point2f inputQuad_pt[4];
+    cv::Point2f outputQuad_pt[4];
+
+    inputQuad_pt[0] = cv::Point2f(ui->lineEdit_ipm_pt_1_x->text().toDouble(),ui->lineEdit_ipm_pt_1_y->text().toDouble());
+    inputQuad_pt[1] = cv::Point2f(ui->lineEdit_ipm_pt_2_x->text().toDouble(),ui->lineEdit_ipm_pt_2_y->text().toDouble());
+    inputQuad_pt[2] = cv::Point2f(ui->lineEdit_ipm_pt_3_x->text().toDouble(),ui->lineEdit_ipm_pt_3_y->text().toDouble());
+    inputQuad_pt[3] = cv::Point2f(ui->lineEdit_ipm_pt_4_x->text().toDouble(),ui->lineEdit_ipm_pt_4_y->text().toDouble());
+
+    ipm_lambda = cv::Mat::zeros(ipm_src_img.rows,ipm_src_img.cols,ipm_src_img.type());
+    outputQuad_pt[0] = cv::Point2f(ui->lineEdit_ipm_pt_1_x_r->text().toDouble(),ui->lineEdit_ipm_pt_1_y_r->text().toDouble());
+    outputQuad_pt[1] = cv::Point2f(ui->lineEdit_ipm_pt_2_x_r->text().toDouble(),ui->lineEdit_ipm_pt_2_y_r->text().toDouble());
+    outputQuad_pt[2] = cv::Point2f(ui->lineEdit_ipm_pt_3_x_r->text().toDouble(),ui->lineEdit_ipm_pt_3_y_r->text().toDouble());
+    outputQuad_pt[3] = cv::Point2f(ui->lineEdit_ipm_pt_4_x_r->text().toDouble(),ui->lineEdit_ipm_pt_4_y_r->text().toDouble());
+    ipm_lambda = cv::getPerspectiveTransform(inputQuad_pt,outputQuad_pt);
+
+    m_ipm_lambda = ipm_lambda;
+
+    cv::Size ipm_disp_size;
+    ipm_disp_size.width = 1000;
+    ipm_disp_size.height = 1000;
+
+    cv::warpPerspective(ipm_src_img,ipm_target_img,ipm_lambda,ipm_disp_size);
+
+    ipm_target_img_q = Mat2QImage(ipm_target_img);
+    ipm_target_img_p.convertFromImage(ipm_target_img_q);
+    ipm_target_img_scene->clear();
+    ipm_target_img_scene->addPixmap(ipm_target_img_p);
+
+    ui->graphicsView_ipm_target->setScene(ipm_target_img_scene);
+    ui->graphicsView_ipm_target->show();
+}
+
+void G_MAIN_WINDOW::on_pushButton_save_ipm_param_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getSaveFileName(this,"Set Save file name") ;
+    string save_ipm_param_path = directory.toStdString();
+
+    FileStorage fs(save_ipm_param_path,FileStorage::WRITE);
+    fs << "m_ipm_lambda" << m_ipm_lambda;
+    fs.release();
+}
+
+void G_MAIN_WINDOW::on_pushButton_save_ipm_img_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getSaveFileName(this,"Set Save file name") ;
+
+    string save_ipm_img_path = directory.toStdString();
+
+    cv::imwrite(save_ipm_img_path,ipm_target_img);
+}
+
+void G_MAIN_WINDOW::on_pushButton_cal_corr_clicked()
+{
+    int ori_x = ui->lineEdit_ori_x->text().toInt();
+    int ori_y = ui->lineEdit_ori_y->text().toInt();
+
+//    int ori_cen_x = ori_x - 960/2;
+//    int ori_cen_y = ori_y - 604/2;
+
+//    double r =  sqrt(ori_cen_x*ori_cen_x + ori_cen_y*ori_cen_y)/(double)sqrt((960/2)*(960/2) + (604/2)*(604/2));
+
+//    cout <<  "r : " << r << endl;
+//    double k1 = m_calib_obj.m_dist_coeffs.at<double>(0,0);
+//    double k2 = m_calib_obj.m_dist_coeffs.at<double>(0,1);
+//    double p1 = m_calib_obj.m_dist_coeffs.at<double>(0,2);
+//    double p2 = m_calib_obj.m_dist_coeffs.at<double>(0,3);
+//    double k3 = m_calib_obj.m_dist_coeffs.at<double>(0,4);
+//    double k4 = m_calib_obj.m_dist_coeffs.at<double>(0,5);
+//    double k5 = m_calib_obj.m_dist_coeffs.at<double>(0,6);
+//    double k6 = m_calib_obj.m_dist_coeffs.at<double>(0,7);
+
+////    cout << "k1 : " << k1 << endl;
+////    cout << "k2 : " << k2 << endl;
+////    cout << "k3 : " << k3 << endl;
+////    cout << "k4 : " << k4 << endl;
+////    cout << "k5 : " << k5 << endl;
+////    cout << "k6 : " << k6 << endl;
+
+//    double x_corr_r = (double)ori_cen_x*(1.0 + k1*pow(r,2) + k2*pow(r,4) + k3*pow(r,6) + k4*pow(r,8) + k5*pow(r,10) + k6*pow(r,12));
+//    double y_corr_r = (double)ori_cen_y*(1.0 + k1*pow(r,2) + k2*pow(r,4) + k3*pow(r,6) + k4*pow(r,8) + k5*pow(r,10) + k6*pow(r,12));
+
+////    cout << (1.0 + k1*pow(r,2) + k2*pow(r,4) + k3*pow(r,6) + k4*pow(r,8) + k5*pow(r,10) + k6*pow(r,12)) << endl;
+
+//    ori_cen_x = ori_cen_x + x_corr_r;
+//    ori_cen_y = ori_cen_y + y_corr_r;
+
+//    r =  sqrt(ori_cen_x*ori_cen_x + ori_cen_y*ori_cen_y)/(double)sqrt((960/2)*(960/2) + (604/2)*(604/2));
+
+//    double ori_cen_x_norm = ori_cen_x/(960.0/2.0);
+//    double ori_cen_y_norm = ori_cen_y/(604.0/2.0);
+
+//    double x_corr = ori_cen_x_norm + (2*p1*ori_cen_x_norm*ori_cen_y_norm + p2*(r*r + 2*ori_cen_x_norm*ori_cen_x_norm));
+//    double y_corr = ori_cen_y_norm + (p1*(r*r + 2*ori_cen_y_norm*ori_cen_y_norm) + 2*p2*ori_cen_x_norm*ori_cen_y_norm);
+
+//    ori_cen_x = ori_cen_x + x_corr;
+//    ori_cen_y = ori_cen_y + y_corr;
+
+//    ui->lineEdit_corr_x->setText(QString::number(ori_cen_x + 960/2));
+//    ui->lineEdit_corr_y->setText(QString::number(ori_cen_y + 604/2));
+
+////    cout << m_calib_obj.m_dist_coeffs.at<double>(0,1) << endl;
+////    double x_corr_r = ori_cen_x*(1 + m_calib_obj.m_dist_coeffs[])
+///
+
+}
+
+void G_MAIN_WINDOW::on_pushButton_load_ipm_param_clicked()
+{
+    QString directory;
+    directory = QFileDialog::getOpenFileName(this,"Select ipm param");
+
+    string ipm_param_path = directory.toStdString();
+
+    cv::FileStorage fs(ipm_param_path, cv::FileStorage::READ);
+    fs["m_ipm_lambda"] >> m_ipm_lambda;
+    fs.release();
+}
+
+void G_MAIN_WINDOW::on_pushButton_convert_to_ipm_pixel_clicked()
+{
+    int ori_x = ui->lineEdit_ori_x_ipm->text().toInt();
+    int ori_y = ui->lineEdit_ori_y_ipm->text().toInt();
+
+    double A11 = m_ipm_lambda.at<double>(0,0);
+    double A12 = m_ipm_lambda.at<double>(0,1);
+    double A13 = m_ipm_lambda.at<double>(0,2);
+
+    double A21 = m_ipm_lambda.at<double>(1,0);
+    double A22 = m_ipm_lambda.at<double>(1,1);
+    double A23 = m_ipm_lambda.at<double>(1,2);
+
+    double A31 = m_ipm_lambda.at<double>(2,0);
+    double A32 = m_ipm_lambda.at<double>(2,1);
+    double A33 = m_ipm_lambda.at<double>(2,2);
+
+    double ipm_x = (A11*(double)ori_x + A12*(double)ori_y + A13)/(A31*(double)ori_x + A32*(double)ori_y + A33);
+    double ipm_y = (A21*(double)ori_x + A22*(double)ori_y + A23)/(A31*(double)ori_x + A32*(double)ori_y + A33);
+
+    cout << ipm_x << endl;
+    cout << ipm_y << endl;
 }

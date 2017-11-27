@@ -66,6 +66,7 @@ double CCAMCALIB::Calibrate(Size &_image_size)
     cv::Vec4d D;
     vector<Mat> rvecs, tvecs;
 
+    int flag;
     double error = calibrateCamera(m_object_points,
                                    m_image_points,
                                    _image_size,
@@ -82,6 +83,18 @@ double CCAMCALIB::Calibrate(Size &_image_size)
     cout << "calibration error : " << error << endl;
 
     return error;
+}
+
+void CCAMCALIB::initUndistortSet(cv::Size _remap_size)
+{
+    cv::initUndistortRectifyMap(
+                m_camera_matrix, // computed camera matrix
+                m_dist_coeffs,   // computed distortion matrix
+                cv::Mat(),       // optional rectification (none)s
+                cv::Mat(),       // camera matrix to generate undistorted
+                _remap_size,      // size of undistorted
+                CV_32FC1,        // type of output map
+                m_map1, m_map2);     //
 }
 
 cv::Mat CCAMCALIB::ReMap(const Mat &_image)

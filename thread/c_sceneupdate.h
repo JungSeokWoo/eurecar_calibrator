@@ -35,6 +35,7 @@ private:
 
 signals:
     void SIG_C_T_SCENEUPDATE_2_MAIN();
+    void SIG_C_T_SCENEUPDATE_2_MAIN_IPM();
 };
 
 #endif // CSCENEUPDATE_H

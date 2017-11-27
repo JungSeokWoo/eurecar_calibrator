@@ -32,6 +32,7 @@
 #include "imgproc/c_camcalib.h"
 #include "3d_view/c_3d_viewer.h"
 #include "custom_qt/c_custom_scene.h"
+#include "custom_qt/c_custom_scene_ipm.h"
 #include "algorithm/c_fitting.h"
 
 namespace Ui {
@@ -125,6 +126,28 @@ private slots:
 
     void on_pushButton_display_result_clicked();
 
+    void on_pushButton_remap_clicked();
+
+    void on_pushButton_load_ipm_src_clicked();
+
+    void on_pushButton_load_single_img_clicked();
+
+    void on_pushButton_load_cam_model_file_clicked();
+
+    void on_pushButton_save_remap_img_clicked();
+
+    void on_pushButton_cal_ipm_clicked();
+
+    void on_pushButton_save_ipm_param_clicked();
+
+    void on_pushButton_save_ipm_img_clicked();
+
+    void on_pushButton_cal_corr_clicked();
+
+    void on_pushButton_load_ipm_param_clicked();
+
+    void on_pushButton_convert_to_ipm_pixel_clicked();
+
 private:
     Ui::G_MAIN_WINDOW *ui;
 
@@ -132,6 +155,7 @@ private:
 // thread
 private:
     C_T_SCENEUPDATE* c_t_sceneupdate = new C_T_SCENEUPDATE;
+    C_T_SCENEUPDATE* c_t_sceneupdate_ipm = new C_T_SCENEUPDATE;
 
 private:
     cv::Mat ori_img;
@@ -140,6 +164,28 @@ private:
     QPixmap disp_img_p;
     QGraphicsScene* disp_img_scene = new QGraphicsScene;
     QMutex mtx_disp;
+
+    cv::Mat remap_img;
+    cv::Mat remap_disp_img;
+    QImage remap_disp_img_q;
+    QPixmap remap_disp_img_p;
+    QGraphicsScene* remap_disp_img_scene = new QGraphicsScene;
+
+    cv::Mat ipm_src_img;
+    cv::Mat ipm_src_img_disp;
+    QImage ipm_src_img_q;
+    QPixmap ipm_src_img_p;
+    C_CUSTOM_SCENE_IPM *ipm_src_img_scene;
+    double ipm_disp_about_src_ratio = 0.0;
+
+    cv::Mat ipm_target_img;
+    cv::Mat ipm_target_img_disp;
+    QImage ipm_target_img_q;
+    QPixmap ipm_target_img_p;
+    QGraphicsScene* ipm_target_img_scene = new QGraphicsScene;
+
+    cv::Mat m_ipm_lambda;
+
 
     string m_imgfolder_path_load;
     string m_imgfile_path_load;
@@ -234,6 +280,7 @@ private:
 
 public slots:
     void SLOT_C_T_SCENEUPDATE_2_MAIN();
+    void SLOT_C_T_SCENEUPDATE_2_MAIN_IPM();
 };
 
 #endif // G_MAIN_WINDOW_H
